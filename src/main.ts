@@ -16,7 +16,7 @@ interface IRenderContext {
   pMaterial: Three.ShaderMaterial;
   pScene: Three.Scene;
   camera: Three.Camera;
-  texture: Three.Texture;
+  texture: Three.CubeTexture;
 }
 
 const settings = {} as ISettings;
@@ -37,13 +37,14 @@ const main = async () => {
   // Image renderer:
   context.iRenderer = new Three.WebGLRenderer({ preserveDrawingBuffer: true });
   context.iRenderer.autoClear = false;
-  context.texture = {} as Three.Texture;
+  context.texture = {} as Three.CubeTexture;
 
   context.iMaterial = new Three.ShaderMaterial({
     fragmentShader: imageShaderCode,
     uniforms: {
       iTime: { value: 0 },
       iResolution: { value: new Three.Vector3() },
+      side: { value: 0 },
     }
   });
 
@@ -88,14 +89,26 @@ const main = async () => {
   requestAnimationFrame(render);
 };
 
+const renderCubeMap = async (): Promise<string[]> => {
+  const image = document.querySelector<HTMLImageElement>("#output");
+  if (!image) return Promise.reject();
+  // context.iMaterial.uniforms
+  const sides = new Array<string>(6);
+  for (let i = 0; i < 6; ++i) {
+    context.iMaterial.uniforms.side.value = i;
+    context.iRenderer.render(context.iScene, context.camera);
+    const data = context.iRenderer.domElement.toDataURL();
+    sides[i] = data;
+    image.src = data;
+  }
+  return Promise.resolve(sides);
+}
+
 const updateSettings = async (settings: ISettings = { width: 256, height: 256 }) => {
   context.iRenderer.setSize(settings.width, settings.height);
   context.iMaterial.uniforms.iResolution.value.set(settings.width, settings.height, 1);
-  context.iRenderer.render(context.iScene, context.camera);
-  const image = document.querySelector<HTMLImageElement>("#output");
-  if (!image) return;
-  image.src = context.iRenderer.domElement.toDataURL();
-  context.texture = await loadTexture(context.iRenderer.domElement.toDataURL());
+  const cubeMapSides = await renderCubeMap();
+  context.texture = await loadTexture(cubeMapSides);
   context.pMaterial.uniforms.iChannel0.value = context.texture;
 };
 
@@ -130,9 +143,9 @@ const getMousePosition = (event: MouseEvent, element: Element): Three.Vector4 =>
   );
 };
 
-const loadTexture = (path: string): Promise<Three.Texture> => {
+const loadTexture = (path: string[]): Promise<Three.CubeTexture> => {
   return new Promise((resolve, reject) => {
-    const tex = new Three.TextureLoader().load(path, (t) => {
+    const tex = new Three.CubeTextureLoader().load(path, (t) => {
       t.wrapS = Three.RepeatWrapping;
       t.wrapT = Three.RepeatWrapping;
       t.repeat.set(4, 4);

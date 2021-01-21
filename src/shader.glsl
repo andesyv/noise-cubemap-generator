@@ -3,7 +3,7 @@
 uniform vec3 iResolution;
 uniform float iTime;
 uniform vec4 iMouse;
-uniform sampler2D iChannel0;
+uniform samplerCube iChannel0;
 
 #define M_PI 3.14159
 
@@ -20,10 +20,8 @@ mat4 persp(float FOV, float aspectRatio, float n, float f) {
 }
 
 // https://iquilezles.org/www/articles/boxfunctions/boxfunctions.htm
-vec2 rayBox( in vec3 ro, in vec3 rd, in vec3 bsize, in vec3 bpos, out vec3 oN ) 
+vec2 rayBox( in vec3 ro, in vec3 rd, in vec3 bsize, out vec3 oN ) 
 {
-    // Shift ray origin with box position
-    ro -= bpos;
     vec3 m = 1.0/rd;
     vec3 n = m*ro;
     vec3 k = abs(m)*bsize;
@@ -87,42 +85,42 @@ vec3 rotate(vec3 v, vec3 dir, float angle) {
     return rotateByQuat(v, makeQuat(dir, angle));
 }
 
+mat4 translate(vec3 t) {
+    mat4 m = mat4(1.0);
+    m[3].xyz = t;
+    return m;
+}
+
 void mainImage(out vec4 fragColor, in vec2 texCoords) {
     vec2 uv = 2. * texCoords / iResolution.xy - 1.;
     vec2 mPos = 2. * iMouse.xy / iResolution.xy - 1.;
 
-    mat4 view = matFromQuat(
-        mulQuat(makeQuat(vec3(1., 0., 0.), mPos.y * M_PI),
-        makeQuat(vec3(0., 1., 0.), -mPos.x * M_PI))
-    );
-    mat4 proj = persp(60., iResolution.x / iResolution.y, 0.1, 100.0);
-    mat4 mat = inverse(proj * view);
+    mat4 view = matFromQuat(mulQuat(
+        makeQuat(vec3(1., 0., 0.), -mPos.y * M_PI),
+        makeQuat(vec3(0., 1., 0.), mPos.x * M_PI)
+    )) * translate(vec3(0., 0., 1.0));
+    mat4 proj = inverse(persp(60., iResolution.x / iResolution.y, 0.1, 100.0));
     
     // Near and far plane
-    vec4 near = mat * vec4(uv, -1., 1.0);
+    vec4 near = view * proj * vec4(uv, -1., 1.0);
     near /= near.w;
-    vec4 far = mat * vec4(uv, 1., 1.0);
+    vec4 far = view * proj * vec4(uv, 1., 1.0);
     far /= far.w;
 
-    /// Scene geometry
-    // Box pos
-    vec4 bpos = mat * vec4(0., 0., 0., 1.0);
-    bpos /= bpos.w;
-
     // Light pos
-    vec4 lpos = mat * vec4(0., 0., -1., 1.);
+    vec4 lpos = view * proj * vec4(0., 0., -1., 1.);
     lpos /= lpos.w;
 
     vec3 ro = near.xyz;
     vec3 rd = normalize((far - near).xyz);
 
     vec3 normal;
-    vec2 bounds = rayBox(ro, rd, vec3(0.03), bpos.xyz, normal);
+    vec2 bounds = rayBox(ro, rd, vec3(0.3), normal);
     if (0.0 < bounds.y) {
         // Surface position (if bounds.x is negative, we are behind camera. Start at camera pos instead)
         vec3 sp = ro + rd * max(bounds.x, 0.);
         vec3 ld = normalize(sp - lpos.xyz);
-        vec3 phong = max(dot(-ld, normal), 0.15) * texture(iChannel0, uv).xyz;
+        vec3 phong = max(dot(-ld, normal), 0.15) * texture(iChannel0, normalize(sp)).xyz;
         fragColor = vec4(phong, 1.);
         return;
     }
