@@ -1,19 +1,24 @@
 <html>
     <head>
-        <title>RaytracingWebGL</title>
+        <title>Noise Cube Generator</title>
         <style>
-            html, body {
-                height: 100%;
-                margin: 0;
-            }
             #c {
-                width: 100%;
-                height: 100%;
-                display: block;
+                width: 500;
+                height: 500;    
             }
         </style>
     </head>
     <body>
         <canvas id="c"></canvas>
+        <p>
+            <form id="settings" onsubmit="return false">
+                Width: <input type="number" value=256><br>
+                Height: <input type="number" value=256><br>
+                Seed: <input type="number" value=1 id="randbutton"><input type="button" onclick="
+                    document.querySelector('#randbutton').value = Math.floor(Math.random() * 10000);
+                    " value="Randomize"><br>
+                <input type="submit" value="Generate">
+            </form>
+        </p>
     </body>
 </html>

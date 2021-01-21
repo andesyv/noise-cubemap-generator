@@ -50,3 +50,9 @@ const resizeRendererToDisplaySize = (renderer: Three.WebGLRenderer): boolean => 
 };
 
 main();
+
+const settings = document.querySelector<HTMLFormElement>('#settings');
+if (settings)
+  settings.addEventListener('submit', (e) => {
+    console.log("Submit!");
+  });
