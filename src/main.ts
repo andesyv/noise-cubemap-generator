@@ -8,21 +8,38 @@ interface ISettings {
   height: number;
 }
 
+interface IRenderContext {
+  iRenderer: Three.WebGLRenderer;
+  iMaterial: Three.ShaderMaterial;
+  iScene: Three.Scene;
+  pRenderer: Three.WebGLRenderer;
+  pMaterial: Three.ShaderMaterial;
+  pScene: Three.Scene;
+  camera: Three.Camera;
+  texture: Three.Texture;
+}
+
+const settings = {} as ISettings;
+const context = {} as IRenderContext;
+
+// Sleep lambda :)
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 const main = async () => {
   const canvas = document.querySelector<HTMLCanvasElement>('#c');
   if (canvas == null) {
     return;
   }
 
-  const camera = new Three.OrthographicCamera(-1, 1, 1, -1, -1, 1);
+  context.camera = new Three.OrthographicCamera(-1, 1, 1, -1, -1, 1);
   const plane = new Three.PlaneBufferGeometry(2, 2);
-  
+
   // Image renderer:
-  const iRenderer = new Three.WebGLRenderer({ preserveDrawingBuffer: true });
-  iRenderer.autoClear = false;
-  let texture = await loadTexture(iRenderer.domElement.toDataURL());
-  
-  const iMaterial = new Three.ShaderMaterial({
+  context.iRenderer = new Three.WebGLRenderer({ preserveDrawingBuffer: true });
+  context.iRenderer.autoClear = false;
+  context.texture = {} as Three.Texture;
+
+  context.iMaterial = new Three.ShaderMaterial({
     fragmentShader: imageShaderCode,
     uniforms: {
       iTime: { value: 0 },
@@ -30,81 +47,68 @@ const main = async () => {
     }
   });
 
-  const iScene = new Three.Scene();
-  iScene.add(new Three.Mesh(plane, iMaterial));
-  
+  context.iScene = new Three.Scene();
+  context.iScene.add(new Three.Mesh(plane, context.iMaterial));
+
   // Preview renderer:
-  const pRenderer = new Three.WebGLRenderer({ canvas: canvas });
-  pRenderer.autoClear = false;
-  
-  
-  const pMaterial = new Three.ShaderMaterial({
+  context.pRenderer = new Three.WebGLRenderer({ canvas: canvas });
+  context.pRenderer.autoClear = false;
+
+
+  context.pMaterial = new Three.ShaderMaterial({
     fragmentShader: previewShaderCode,
     uniforms: {
       iTime: { value: 0 },
       iResolution: { value: new Three.Vector3() },
       iMouse: { value: new Three.Vector4() },
-      iChannel0: { value: texture },
+      iChannel0: { value: context.texture },
     },
   });
-  
-  const pScene = new Three.Scene();
-  pScene.add(new Three.Mesh(plane, pMaterial));
+
+  context.pScene = new Three.Scene();
+  context.pScene.add(new Three.Mesh(plane, context.pMaterial));
 
   // Settings interface
-  const updateSettings = async (settings: ISettings = { width: 256, height: 256}) => {
-    iRenderer.setSize(settings.width, settings.height);
-    iRenderer.render(iScene, camera);
-    const image = document.querySelector<HTMLImageElement>("#output");
-    if (!image) return;
-    image.src = iRenderer.domElement.toDataURL();
-    texture = await loadTexture(iRenderer.domElement.toDataURL());
-    pMaterial.uniforms.iChannel0.value = texture;
-    console.log("Updated settings");
-  };
-
   const settingsObj = document.querySelector<HTMLFormElement>('#settings');
-  const settings = {} as ISettings;
-  if (settingsObj) {
-    const submitEvent = () => {
-      console.log("Submit!");
-      const imgwidth = settingsObj.querySelector<HTMLInputElement>('#swidth');
-      const imgheight = settingsObj.querySelector<HTMLInputElement>('#sheight');
-      if (!imgwidth || !imgheight)
-        return;
-      
-      settings.width = imgwidth.valueAsNumber;
-      settings.height = imgheight.valueAsNumber;
+  if (!settingsObj)
+    return;
 
-      updateSettings(settings);
-    }
-    settingsObj.addEventListener('submit', submitEvent);
-    // Run the submit button once on init
-    submitEvent();
-  }
+  settingsObj.addEventListener('submit', (ev) => {
+    const s: HTMLFormElement | null = ev.currentTarget as HTMLFormElement;
+    if (s) fetchSettings(s)
+  });
+  // Run the submit button once on init
+  await fetchSettings(settingsObj);
 
   // Mouse input
   canvas.addEventListener('mousemove', (e) => {
-    pMaterial.uniforms.iMouse.value = getMousePosition(e, canvas);
+    context.pMaterial.uniforms.iMouse.value = getMousePosition(e, canvas);
   });
-
-  // Rendering
-  const render = (time: number) => {
-    resizeRendererToDisplaySize(pRenderer);
-
-    const canvas = pRenderer.domElement;
-    pMaterial.uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-    pMaterial.uniforms.iTime.value = time * 0.001; // Time is in milliseconds
-    iMaterial.uniforms.iResolution.value.set(settings.width, settings.height, 1);
-    iMaterial.uniforms.iTime.value = time * 0.001; // Time is in milliseconds
-
-    pRenderer.render(pScene, camera);
-
-    requestAnimationFrame(render);
-  };
 
   requestAnimationFrame(render);
 };
+
+const updateSettings = async (settings: ISettings = { width: 256, height: 256 }) => {
+  context.iRenderer.setSize(settings.width, settings.height);
+  context.iMaterial.uniforms.iResolution.value.set(settings.width, settings.height, 1);
+  context.iRenderer.render(context.iScene, context.camera);
+  const image = document.querySelector<HTMLImageElement>("#output");
+  if (!image) return;
+  image.src = context.iRenderer.domElement.toDataURL();
+  context.texture = await loadTexture(context.iRenderer.domElement.toDataURL());
+  context.pMaterial.uniforms.iChannel0.value = context.texture;
+};
+
+const fetchSettings = async (settingsObj: HTMLFormElement) => {
+  const imgwidth = settingsObj.querySelector<HTMLInputElement>('#swidth');
+  const imgheight = settingsObj.querySelector<HTMLInputElement>('#sheight');
+  if (!imgwidth || !imgheight) return;
+
+  settings.width = imgwidth.valueAsNumber;
+  settings.height = imgheight.valueAsNumber;
+
+  await updateSettings(settings);
+}
 
 const resizeRendererToDisplaySize = (renderer: Three.WebGLRenderer): boolean => {
   const canvas = renderer.domElement;
@@ -136,6 +140,20 @@ const loadTexture = (path: string): Promise<Three.Texture> => {
     }, undefined, () => { reject(); });
     tex.generateMipmaps = true;
   });
+};
+
+// Rendering
+const render = (time: number) => {
+  resizeRendererToDisplaySize(context.pRenderer);
+
+  const canvas = context.pRenderer.domElement;
+  context.pMaterial.uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+  context.pMaterial.uniforms.iTime.value = time * 0.001; // Time is in milliseconds
+  context.iMaterial.uniforms.iTime.value = time * 0.001; // Time is in milliseconds
+
+  context.pRenderer.render(context.pScene, context.camera);
+
+  requestAnimationFrame(render);
 };
 
 main();
