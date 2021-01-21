@@ -1,36 +1,92 @@
 // Inspiration: https://threejsfundamentals.org/threejs/lessons/threejs-shadertoy.html
 import * as Three from 'three';
-import shaderCode from './shader.glsl';
+import imageShaderCode from './imageshader.glsl';
+import previewShaderCode from './shader.glsl';
+
+interface ISettings {
+  width: number;
+  height: number;
+}
 
 const main = () => {
   const canvas = document.querySelector<HTMLCanvasElement>('#c');
   if (canvas == null) {
     return;
   }
-  const renderer = new Three.WebGLRenderer({ canvas: canvas });
-  renderer.autoClear = false;
 
   const camera = new Three.OrthographicCamera(-1, 1, 1, -1, -1, 1);
-  const scene = new Three.Scene();
   const plane = new Three.PlaneBufferGeometry(2, 2);
-  const uniforms = {
-    iTime: { value: 0 },
-    iResolution: { value: new Three.Vector3() },
-  };
-  const material = new Three.ShaderMaterial({
-    fragmentShader: shaderCode,
-    uniforms: uniforms,
+  
+  // Image renderer:
+  const iRenderer = new Three.WebGLRenderer();
+  iRenderer.autoClear = false;
+  const texturePath = iRenderer.domElement.toDataURL();
+  
+  const iMaterial = new Three.ShaderMaterial({
+    fragmentShader: imageShaderCode,
+    uniforms: {
+      iTime: { value: 0 },
+      iResolution: { value: new Three.Vector3() },
+    }
   });
-  scene.add(new Three.Mesh(plane, material));
 
+  const iScene = new Three.Scene();
+  iScene.add(new Three.Mesh(plane, iMaterial));
+  
+  // Preview renderer:
+  const pRenderer = new Three.WebGLRenderer({ canvas: canvas });
+  pRenderer.autoClear = false;
+  
+  
+  const pMaterial = new Three.ShaderMaterial({
+    fragmentShader: previewShaderCode,
+    uniforms: {
+      iTime: { value: 0 },
+      iResolution: { value: new Three.Vector3() },
+      iChannel0: { value: texturePath },
+    },
+  });
+  
+  const pScene = new Three.Scene();
+  pScene.add(new Three.Mesh(plane, pMaterial));
+
+  // Settings interface
+  const updateSettings = (settings: ISettings = { width: 256, height: 256}) => {
+      iRenderer.setSize(settings.width, settings.height);
+      iRenderer.render(iScene, camera);
+  };
+
+  const settingsObj = document.querySelector<HTMLFormElement>('#settings');
+  const settings = {} as ISettings;
+  if (settingsObj) {
+    const submitEvent = () => {
+      console.log("Submit!");
+      const imgwidth = settingsObj.querySelector<HTMLInputElement>('#swidth');
+      const imgheight = settingsObj.querySelector<HTMLInputElement>('#sheight');
+      if (!imgwidth || !imgheight)
+        return;
+      
+      settings.width = imgwidth.valueAsNumber;
+      settings.height = imgheight.valueAsNumber;
+
+      updateSettings(settings);
+    }
+    settingsObj.addEventListener('submit', submitEvent);
+    // Run the submit button once on init
+    submitEvent();
+  }
+
+  // Rendering
   const render = (time: number) => {
-    resizeRendererToDisplaySize(renderer);
+    resizeRendererToDisplaySize(pRenderer);
 
-    const canvas = renderer.domElement;
-    uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-    uniforms.iTime.value = time * 0.001; // Time is in milliseconds
+    const canvas = pRenderer.domElement;
+    pMaterial.uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+    pMaterial.uniforms.iTime.value = time * 0.001; // Time is in milliseconds
+    iMaterial.uniforms.iResolution.value.set(settings.width, settings.height, 1);
+    iMaterial.uniforms.iTime.value = time * 0.001; // Time is in milliseconds
 
-    renderer.render(scene, camera);
+    pRenderer.render(pScene, camera);
 
     requestAnimationFrame(render);
   };
@@ -50,9 +106,3 @@ const resizeRendererToDisplaySize = (renderer: Three.WebGLRenderer): boolean => 
 };
 
 main();
-
-const settings = document.querySelector<HTMLFormElement>('#settings');
-if (settings)
-  settings.addEventListener('submit', (e) => {
-    console.log("Submit!");
-  });
