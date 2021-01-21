@@ -8,7 +8,7 @@ interface ISettings {
   height: number;
 }
 
-const main = () => {
+const main = async () => {
   const canvas = document.querySelector<HTMLCanvasElement>('#c');
   if (canvas == null) {
     return;
@@ -20,7 +20,7 @@ const main = () => {
   // Image renderer:
   const iRenderer = new Three.WebGLRenderer({ preserveDrawingBuffer: true });
   iRenderer.autoClear = false;
-  let texture = new Three.TextureLoader().load(iRenderer.domElement.toDataURL());
+  let texture = await loadTexture(iRenderer.domElement.toDataURL());
   
   const iMaterial = new Three.ShaderMaterial({
     fragmentShader: imageShaderCode,
@@ -52,13 +52,14 @@ const main = () => {
   pScene.add(new Three.Mesh(plane, pMaterial));
 
   // Settings interface
-  const updateSettings = (settings: ISettings = { width: 256, height: 256}) => {
+  const updateSettings = async (settings: ISettings = { width: 256, height: 256}) => {
     iRenderer.setSize(settings.width, settings.height);
     iRenderer.render(iScene, camera);
     const image = document.querySelector<HTMLImageElement>("#output");
     if (!image) return;
     image.src = iRenderer.domElement.toDataURL();
-    texture = new Three.TextureLoader().load(iRenderer.domElement.toDataURL());
+    texture = await loadTexture(iRenderer.domElement.toDataURL());
+    pMaterial.uniforms.iChannel0.value = texture;
     console.log("Updated settings");
   };
 
@@ -123,6 +124,18 @@ const getMousePosition = (event: MouseEvent, element: Element): Three.Vector4 =>
     0,
     0
   );
+};
+
+const loadTexture = (path: string): Promise<Three.Texture> => {
+  return new Promise((resolve, reject) => {
+    const tex = new Three.TextureLoader().load(path, (t) => {
+      t.wrapS = Three.RepeatWrapping;
+      t.wrapT = Three.RepeatWrapping;
+      t.repeat.set(4, 4);
+      resolve(t);
+    }, undefined, () => { reject(); });
+    tex.generateMipmaps = true;
+  });
 };
 
 main();
