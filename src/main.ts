@@ -18,9 +18,9 @@ const main = () => {
   const plane = new Three.PlaneBufferGeometry(2, 2);
   
   // Image renderer:
-  const iRenderer = new Three.WebGLRenderer();
+  const iRenderer = new Three.WebGLRenderer({ preserveDrawingBuffer: true });
   iRenderer.autoClear = false;
-  const texturePath = iRenderer.domElement.toDataURL();
+  let texture = new Three.TextureLoader().load(iRenderer.domElement.toDataURL());
   
   const iMaterial = new Three.ShaderMaterial({
     fragmentShader: imageShaderCode,
@@ -44,7 +44,7 @@ const main = () => {
       iTime: { value: 0 },
       iResolution: { value: new Three.Vector3() },
       iMouse: { value: new Three.Vector4() },
-      iChannel0: { value: texturePath },
+      iChannel0: { value: texture },
     },
   });
   
@@ -53,8 +53,13 @@ const main = () => {
 
   // Settings interface
   const updateSettings = (settings: ISettings = { width: 256, height: 256}) => {
-      iRenderer.setSize(settings.width, settings.height);
-      iRenderer.render(iScene, camera);
+    iRenderer.setSize(settings.width, settings.height);
+    iRenderer.render(iScene, camera);
+    const image = document.querySelector<HTMLImageElement>("#output");
+    if (!image) return;
+    image.src = iRenderer.domElement.toDataURL();
+    texture = new Three.TextureLoader().load(iRenderer.domElement.toDataURL());
+    console.log("Updated settings");
   };
 
   const settingsObj = document.querySelector<HTMLFormElement>('#settings');

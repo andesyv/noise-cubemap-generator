@@ -3,6 +3,7 @@
 uniform vec3 iResolution;
 uniform float iTime;
 uniform vec4 iMouse;
+uniform sampler2D iChannel0;
 
 #define M_PI 3.14159
 
@@ -121,7 +122,7 @@ void mainImage(out vec4 fragColor, in vec2 texCoords) {
         // Surface position (if bounds.x is negative, we are behind camera. Start at camera pos instead)
         vec3 sp = ro + rd * max(bounds.x, 0.);
         vec3 ld = normalize(sp - lpos.xyz);
-        vec3 phong = max(dot(-ld, normal), 0.15) * vec3(1., 0., 0.);
+        vec3 phong = max(dot(-ld, normal), 0.15) * texture(iChannel0, uv).xyz;
         fragColor = vec4(phong, 1.);
         return;
     }
