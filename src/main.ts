@@ -90,16 +90,11 @@ const main = async () => {
 };
 
 const renderCubeMap = async (): Promise<string[]> => {
-  const image = document.querySelector<HTMLImageElement>("#output");
-  if (!image) return Promise.reject();
-  // context.iMaterial.uniforms
   const sides = new Array<string>(6);
   for (let i = 0; i < 6; ++i) {
     context.iMaterial.uniforms.side.value = i;
     context.iRenderer.render(context.iScene, context.camera);
-    const data = context.iRenderer.domElement.toDataURL();
-    sides[i] = data;
-    image.src = data;
+    sides[i] = context.iRenderer.domElement.toDataURL();
   }
   return Promise.resolve(sides);
 }
@@ -113,12 +108,10 @@ const updateSettings = async (settings: ISettings = { width: 256, height: 256 })
 };
 
 const fetchSettings = async (settingsObj: HTMLFormElement) => {
-  const imgwidth = settingsObj.querySelector<HTMLInputElement>('#swidth');
-  const imgheight = settingsObj.querySelector<HTMLInputElement>('#sheight');
-  if (!imgwidth || !imgheight) return;
+  const imgsize = settingsObj.querySelector<HTMLInputElement>('#texturesize');
+  if (!imgsize) return;
 
-  settings.width = imgwidth.valueAsNumber;
-  settings.height = imgheight.valueAsNumber;
+  settings.width = settings.height = imgsize.valueAsNumber;
 
   await updateSettings(settings);
 }
