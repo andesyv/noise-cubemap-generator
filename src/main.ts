@@ -43,6 +43,7 @@ const main = () => {
     uniforms: {
       iTime: { value: 0 },
       iResolution: { value: new Three.Vector3() },
+      iMouse: { value: new Three.Vector4() },
       iChannel0: { value: texturePath },
     },
   });
@@ -76,6 +77,11 @@ const main = () => {
     submitEvent();
   }
 
+  // Mouse input
+  canvas.addEventListener('mousemove', (e) => {
+    pMaterial.uniforms.iMouse.value = getMousePosition(e, canvas);
+  });
+
   // Rendering
   const render = (time: number) => {
     resizeRendererToDisplaySize(pRenderer);
@@ -103,6 +109,15 @@ const resizeRendererToDisplaySize = (renderer: Three.WebGLRenderer): boolean => 
     renderer.setSize(width, height, false);
   }
   return needResize;
+};
+
+const getMousePosition = (event: MouseEvent, element: Element): Three.Vector4 => {
+  return new Three.Vector4(
+    event.clientX - element.getBoundingClientRect().left,
+    element.getBoundingClientRect().bottom - event.clientY,
+    0,
+    0
+  );
 };
 
 main();

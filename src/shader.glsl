@@ -2,6 +2,7 @@
 
 uniform vec3 iResolution;
 uniform float iTime;
+uniform vec4 iMouse;
 
 #define M_PI 3.14159
 
@@ -87,11 +88,11 @@ vec3 rotate(vec3 v, vec3 dir, float angle) {
 
 void mainImage(out vec4 fragColor, in vec2 texCoords) {
     vec2 uv = 2. * texCoords / iResolution.xy - 1.;
-    // vec2 mPos = 2. * iMouse.xy / iResolution.xy - 1.;
+    vec2 mPos = 2. * iMouse.xy / iResolution.xy - 1.;
 
     mat4 view = matFromQuat(
-        mulQuat(makeQuat(vec3(1., 0., 0.), 0. * M_PI),
-        makeQuat(vec3(0., 1., 0.), iTime * M_PI))
+        mulQuat(makeQuat(vec3(1., 0., 0.), mPos.y * M_PI),
+        makeQuat(vec3(0., 1., 0.), -mPos.x * M_PI))
     );
     mat4 proj = persp(60., iResolution.x / iResolution.y, 0.1, 100.0);
     mat4 mat = inverse(proj * view);
@@ -125,7 +126,7 @@ void mainImage(out vec4 fragColor, in vec2 texCoords) {
         return;
     }
 
-    fragColor = vec4(rd.xyz, 1.);
+    fragColor = vec4(rd.xyz * 0.5 + 0.5, 1.);
 }
  
 void main() {
