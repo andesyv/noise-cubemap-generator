@@ -15,8 +15,8 @@
     <p>
     <form id="settings" onsubmit="return false">
         Size (width and height): <input type="number" value=256 id="texturesize"><br>
-        Seed: <input type="number" value=1 id="randbutton"><input type="button" onclick="
-                    document.querySelector('#randbutton').value = Math.floor(Math.random() * 10000);
+        Seed: <input type="number" value=1 id="textureseed"><input type="button" onclick="
+                    document.querySelector('#textureseed').value = Math.floor(Math.random() * 10000);
                     " value="Randomize"><br>
         <input type="submit" value="Generate">
     </form>

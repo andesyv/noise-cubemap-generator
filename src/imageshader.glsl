@@ -3,8 +3,7 @@
 uniform vec3 iResolution;
 uniform float iTime;
 uniform int side;
-
-
+uniform int seed;
 
 //
 // Description : Array and textureless GLSL 2D/3D/4D simplex 
@@ -140,5 +139,5 @@ void main() {
     }
 
     // Output to screen
-    gl_FragColor = vec4(vec3(snoise(xyz)),1.0);
+    gl_FragColor = vec4(vec3(snoise(xyz + float(seed))),1.0);
 }

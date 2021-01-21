@@ -6,6 +6,7 @@ import previewShaderCode from './shader.glsl';
 interface ISettings {
   width: number;
   height: number;
+  seed: number;
 }
 
 interface IRenderContext {
@@ -45,6 +46,7 @@ const main = async () => {
       iTime: { value: 0 },
       iResolution: { value: new Three.Vector3() },
       side: { value: 0 },
+      seed: { value: 0 },
     }
   });
 
@@ -99,9 +101,10 @@ const renderCubeMap = async (): Promise<string[]> => {
   return Promise.resolve(sides);
 }
 
-const updateSettings = async (settings: ISettings = { width: 256, height: 256 }) => {
+const updateSettings = async (settings: ISettings = { width: 256, height: 256, seed: 1 }) => {
   context.iRenderer.setSize(settings.width, settings.height);
   context.iMaterial.uniforms.iResolution.value.set(settings.width, settings.height, 1);
+  context.iMaterial.uniforms.seed.value = settings.seed;
   const cubeMapSides = await renderCubeMap();
   context.texture = await loadTexture(cubeMapSides);
   context.pMaterial.uniforms.iChannel0.value = context.texture;
@@ -109,9 +112,11 @@ const updateSettings = async (settings: ISettings = { width: 256, height: 256 })
 
 const fetchSettings = async (settingsObj: HTMLFormElement) => {
   const imgsize = settingsObj.querySelector<HTMLInputElement>('#texturesize');
-  if (!imgsize) return;
+  const imgseed = settingsObj.querySelector<HTMLInputElement>('#textureseed');
+  if (!imgsize || !imgseed) return;
 
   settings.width = settings.height = imgsize.valueAsNumber;
+  settings.seed = imgseed.valueAsNumber;
 
   await updateSettings(settings);
 }
