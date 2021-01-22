@@ -33,4 +33,4 @@ The script will run `webpack`, which again will run the typescript compiler and 
 everything into the `build` folder. The final result can be viewed in the `build/index.html` file.
 
 ## Licensing
-See [github.com/stegu/webgl-noise/LICENCE](https://github.com/stegu/webgl-noise/blob/master/LICENSE) for 3d simplex noise license.
+See [webgl-noise-LICENCE](https://github.com/andesyv/noise-cubemap-generator/blob/master/webgl-noise-LICENCE) for 3d simplex noise license. The rest of the project is licensed with a normal MIT license seen in [LICENCE](https://github.com/andesyv/noise-cubemap-generator/blob/master/LICENCE).

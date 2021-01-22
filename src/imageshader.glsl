@@ -20,7 +20,7 @@ uniform Layer layers[MAX_LAYERS];
 //  Maintainer : stegu
 //     Lastmod : 20201014 (stegu)
 //     License : Copyright (C) 2011 Ashima Arts. All rights reserved.
-//               Distributed under the MIT License. See LICENSE file.
+//               Distributed under the MIT License. See webgl-noise-LICENSE file.
 //               https://github.com/ashima/webgl-noise
 //               https://github.com/stegu/webgl-noise
 //
