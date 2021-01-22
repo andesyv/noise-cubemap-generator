@@ -24,7 +24,7 @@ const settings = {} as ISettings;
 const context = {} as IRenderContext;
 
 // Sleep lambda :)
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+// const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const main = async () => {
   const canvas = document.querySelector<HTMLCanvasElement>('#c');
@@ -47,7 +47,7 @@ const main = async () => {
       iResolution: { value: new Three.Vector3() },
       side: { value: 0 },
       seed: { value: 0 },
-    }
+    },
   });
 
   context.iScene = new Three.Scene();
@@ -56,7 +56,6 @@ const main = async () => {
   // Preview renderer:
   context.pRenderer = new Three.WebGLRenderer({ canvas: canvas });
   context.pRenderer.autoClear = false;
-
 
   context.pMaterial = new Three.ShaderMaterial({
     fragmentShader: previewShaderCode,
@@ -73,12 +72,11 @@ const main = async () => {
 
   // Settings interface
   const settingsObj = document.querySelector<HTMLFormElement>('#settings');
-  if (!settingsObj)
-    return;
+  if (!settingsObj) return;
 
   settingsObj.addEventListener('submit', (ev) => {
     const s: HTMLFormElement | null = ev.currentTarget as HTMLFormElement;
-    if (s) fetchSettings(s)
+    if (s) fetchSettings(s);
   });
   // Run the submit button once on init
   await fetchSettings(settingsObj);
@@ -99,7 +97,7 @@ const renderCubeMap = async (): Promise<string[]> => {
     sides[i] = context.iRenderer.domElement.toDataURL();
   }
   return Promise.resolve(sides);
-}
+};
 
 const updateSettings = async (settings: ISettings = { width: 256, height: 256, seed: 1 }) => {
   context.iRenderer.setSize(settings.width, settings.height);
@@ -119,7 +117,7 @@ const fetchSettings = async (settingsObj: HTMLFormElement) => {
   settings.seed = imgseed.valueAsNumber;
 
   await updateSettings(settings);
-}
+};
 
 const resizeRendererToDisplaySize = (renderer: Three.WebGLRenderer): boolean => {
   const canvas = renderer.domElement;
@@ -143,12 +141,19 @@ const getMousePosition = (event: MouseEvent, element: Element): Three.Vector4 =>
 
 const loadTexture = (path: string[]): Promise<Three.CubeTexture> => {
   return new Promise((resolve, reject) => {
-    const tex = new Three.CubeTextureLoader().load(path, (t) => {
-      t.wrapS = Three.RepeatWrapping;
-      t.wrapT = Three.RepeatWrapping;
-      t.repeat.set(4, 4);
-      resolve(t);
-    }, undefined, () => { reject(); });
+    const tex = new Three.CubeTextureLoader().load(
+      path,
+      (t) => {
+        t.wrapS = Three.RepeatWrapping;
+        t.wrapT = Three.RepeatWrapping;
+        t.repeat.set(4, 4);
+        resolve(t);
+      },
+      undefined,
+      () => {
+        reject();
+      }
+    );
     tex.generateMipmaps = true;
   });
 };
