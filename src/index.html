@@ -15,10 +15,19 @@
     <p>
     <form id="settings" onsubmit="return false">
         Size (width and height): <input type="number" value=256 id="texturesize"><br>
+        Layers:<br>
+        <div id="texturelayers">
+            <!--
+                <li>
+                    <input type="number" value="0.01" step="any" id="amplitude"/>
+                </li>
+            -->
+        </div><button type="button" id="addlayer">New layer</button><br>
         Seed: <input type="number" value=1 id="textureseed"><input type="button" onclick="
-                    document.querySelector('#textureseed').value = Math.floor(Math.random() * 10000);
+                    const el = document.querySelector('#textureseed');
+                    el.value = Math.floor(Math.random() * 10000);
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
                     " value="Randomize"><br>
-        <input type="submit" value="Generate">
     </form>
     </p>
 </body>

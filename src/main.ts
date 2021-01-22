@@ -3,10 +3,16 @@ import * as Three from 'three';
 import imageShaderCode from './imageshader.glsl';
 import previewShaderCode from './shader.glsl';
 
+interface ITextureLayer {
+  frequency: number;
+  amplitude: number;
+}
+
 interface ISettings {
   width: number;
   height: number;
   seed: number;
+  layers: ITextureLayer[];
 }
 
 interface IRenderContext {
@@ -20,7 +26,12 @@ interface IRenderContext {
   texture: Three.CubeTexture;
 }
 
-const settings = {} as ISettings;
+const settings = {
+  width: 256,
+  height: 256,
+  seed: 1,
+  layers: [{ frequency: 1.0, amplitude: 0.5 }],
+};
 const context = {} as IRenderContext;
 
 // Sleep lambda :)
@@ -74,12 +85,21 @@ const main = async () => {
   const settingsObj = document.querySelector<HTMLFormElement>('#settings');
   if (!settingsObj) return;
 
-  settingsObj.addEventListener('submit', (ev) => {
+  // settingsObj.addEventListener('submit', (ev) => {
+  settingsObj.addEventListener('change', (ev) => {
     const s: HTMLFormElement | null = ev.currentTarget as HTMLFormElement;
     if (s) fetchSettings(s);
   });
+
+  const addlayerBtn = document.querySelector<HTMLInputElement>('#addlayer');
+  if (addlayerBtn)
+    addlayerBtn.addEventListener('click', () => {
+      addLayer(settingsObj);
+    });
   // Run the submit button once on init
   await fetchSettings(settingsObj);
+  // Also run add layer button to setup atleast one layer:
+  addLayer(settingsObj);
 
   // Mouse input
   canvas.addEventListener('mousemove', (e) => {
@@ -99,7 +119,7 @@ const renderCubeMap = async (): Promise<string[]> => {
   return Promise.resolve(sides);
 };
 
-const updateSettings = async (settings: ISettings = { width: 256, height: 256, seed: 1 }) => {
+const updateSettings = async (settings: ISettings) => {
   context.iRenderer.setSize(settings.width, settings.height);
   context.iMaterial.uniforms.iResolution.value.set(settings.width, settings.height, 1);
   context.iMaterial.uniforms.seed.value = settings.seed;
@@ -108,15 +128,79 @@ const updateSettings = async (settings: ISettings = { width: 256, height: 256, s
   context.pMaterial.uniforms.iChannel0.value = context.texture;
 };
 
+const getLayer = (listelement: HTMLLIElement): ITextureLayer | null => {
+  const freqElement = listelement.querySelector<HTMLInputElement>('#frequency');
+  const ampElement = listelement.querySelector<HTMLInputElement>('#amplitude');
+  if (freqElement && ampElement)
+    return {
+      frequency: freqElement.valueAsNumber,
+      amplitude: ampElement.valueAsNumber,
+    };
+  return null;
+};
+
 const fetchSettings = async (settingsObj: HTMLFormElement) => {
   const imgsize = settingsObj.querySelector<HTMLInputElement>('#texturesize');
   const imgseed = settingsObj.querySelector<HTMLInputElement>('#textureseed');
-  if (!imgsize || !imgseed) return;
+  const imglayers = settingsObj.querySelector<HTMLUListElement>('#texturelayers');
+  if (!imgsize || !imgseed || !imglayers) return;
 
   settings.width = settings.height = imgsize.valueAsNumber;
   settings.seed = imgseed.valueAsNumber;
+  const layers = imglayers.getElementsByTagName('li');
+  settings.layers = new Array(layers.length);
+  for (const item of layers) {
+    const layer = getLayer(item);
+    if (layer) settings.layers.push(layer);
+  }
 
   await updateSettings(settings);
+
+  console.log('Updated!');
+};
+
+const addLayer = (settingsObj: HTMLFormElement) => {
+  // If there are no elements in list, add 1
+  if (settings.layers.length == 0) {
+    settings.layers.push({ frequency: 1.0, amplitude: 0.5 });
+  } else {
+    const last = settings.layers[settings.layers.length - 1];
+    settings.layers.push({ frequency: 2 * last.frequency, amplitude: last.amplitude / 2 });
+  }
+
+  const imglayers = settingsObj.querySelector<HTMLUListElement>('#texturelayers');
+  if (!imglayers) return;
+
+  /// Man, JSX for this exact part would've been nice...
+  const layer = settings.layers[settings.layers.length - 1];
+  const node = document.createElement('div');
+
+  // Amplitude
+  node.appendChild(document.createTextNode('Amplitude: '));
+  const amp = node.appendChild(document.createElement('input'));
+  amp.type = 'number';
+  amp.step = 'any';
+  amp.id = 'amplitude';
+  amp.value = layer.amplitude.toString();
+
+  // Frequency
+  node.appendChild(document.createTextNode('Frequency: '));
+  const freq = node.appendChild(document.createElement('input'));
+  freq.type = 'number';
+  freq.step = 'any';
+  freq.id = 'frequency';
+  freq.value = layer.frequency.toString();
+
+  // Removal button
+  const remove = node.appendChild(document.createElement('button'));
+  remove.addEventListener('click', () => {
+    imglayers.removeChild(node);
+    imglayers.dispatchEvent(new Event('change', { bubbles: true })); // Manually dispatch event for other event handlers
+  });
+  remove.appendChild(document.createTextNode('Remove'));
+
+  imglayers.appendChild(node);
+  imglayers.dispatchEvent(new Event('change', { bubbles: true })); // Manually dispatch event for other event handlers
 };
 
 const resizeRendererToDisplaySize = (renderer: Three.WebGLRenderer): boolean => {
@@ -164,8 +248,7 @@ const render = (time: number) => {
 
   const canvas = context.pRenderer.domElement;
   context.pMaterial.uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
-  context.pMaterial.uniforms.iTime.value = time * 0.001; // Time is in milliseconds
-  context.iMaterial.uniforms.iTime.value = time * 0.001; // Time is in milliseconds
+  context.pMaterial.uniforms.iTime.value = context.iMaterial.uniforms.iTime.value = time * 0.001; // Time is in milliseconds
 
   context.pRenderer.render(context.pScene, context.camera);
 
