@@ -3,9 +3,11 @@ import * as Three from 'three';
 import imageShaderCode from './imageshader.glsl';
 import previewShaderCode from './shader.glsl';
 
+const MAX_LAYERS = 16;
+
 interface ITextureLayer {
-  frequency: number;
   amplitude: number;
+  frequency: number;
 }
 
 interface ISettings {
@@ -51,6 +53,13 @@ const main = async () => {
   context.iRenderer.autoClear = false;
   context.texture = {} as Three.CubeTexture;
 
+  const initLayerList = () => {
+    const arr = new Array<ITextureLayer>(MAX_LAYERS);
+    arr.fill({ amplitude: 0.5, frequency: 0.5 });
+    Object.seal(arr);
+    return arr;
+  };
+
   context.iMaterial = new Three.ShaderMaterial({
     fragmentShader: imageShaderCode,
     uniforms: {
@@ -58,6 +67,13 @@ const main = async () => {
       iResolution: { value: new Three.Vector3() },
       side: { value: 0 },
       seed: { value: 0 },
+      layerCount: { value: 0 },
+      layers: {
+        value: initLayerList(),
+      },
+    },
+    defines: {
+      MAX_LAYERS: MAX_LAYERS,
     },
   });
 
@@ -85,7 +101,6 @@ const main = async () => {
   const settingsObj = document.querySelector<HTMLFormElement>('#settings');
   if (!settingsObj) return;
 
-  // settingsObj.addEventListener('submit', (ev) => {
   settingsObj.addEventListener('change', (ev) => {
     const s: HTMLFormElement | null = ev.currentTarget as HTMLFormElement;
     if (s) fetchSettings(s);
@@ -123,12 +138,18 @@ const updateSettings = async (settings: ISettings) => {
   context.iRenderer.setSize(settings.width, settings.height);
   context.iMaterial.uniforms.iResolution.value.set(settings.width, settings.height, 1);
   context.iMaterial.uniforms.seed.value = settings.seed;
+  // Layers:
+  context.iMaterial.uniforms.layerCount.value = settings.layers.length;
+  settings.layers.forEach((v, i) => {
+    if (i < context.iMaterial.uniforms.layers.value.length)
+      context.iMaterial.uniforms.layers.value[i] = v;
+  });
   const cubeMapSides = await renderCubeMap();
   context.texture = await loadTexture(cubeMapSides);
   context.pMaterial.uniforms.iChannel0.value = context.texture;
 };
 
-const getLayer = (listelement: HTMLLIElement): ITextureLayer | null => {
+const getLayer = (listelement: HTMLDivElement): ITextureLayer | null => {
   const freqElement = listelement.querySelector<HTMLInputElement>('#frequency');
   const ampElement = listelement.querySelector<HTMLInputElement>('#amplitude');
   if (freqElement && ampElement)
@@ -147,7 +168,7 @@ const fetchSettings = async (settingsObj: HTMLFormElement) => {
 
   settings.width = settings.height = imgsize.valueAsNumber;
   settings.seed = imgseed.valueAsNumber;
-  const layers = imglayers.getElementsByTagName('li');
+  const layers = imglayers.getElementsByTagName('div');
   settings.layers = new Array(layers.length);
   for (const item of layers) {
     const layer = getLayer(item);
@@ -155,8 +176,6 @@ const fetchSettings = async (settingsObj: HTMLFormElement) => {
   }
 
   await updateSettings(settings);
-
-  console.log('Updated!');
 };
 
 const addLayer = (settingsObj: HTMLFormElement) => {
