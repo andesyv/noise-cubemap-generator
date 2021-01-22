@@ -1,0 +1,4 @@
+<html><head><title>Noise Cube Generator</title><style>#c {
+            width: 500;
+            height: 500;
+        }</style></head><body><canvas id="c"></canvas><p></p><form id="settings" onsubmit="return false">Size (width and height): <input type="number" value="256" id="texturesize"><br>Seed: <input type="number" value="1" id="textureseed"><input type="button" onclick="document.querySelector('#textureseed').value = Math.floor(Math.random() * 10000);" value="Randomize"><br><input type="submit" value="Generate"></form><p></p><script src="bundle.js"></script></body></html>
