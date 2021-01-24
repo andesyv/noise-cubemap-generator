@@ -13,7 +13,7 @@
 <body>
     <canvas id="c"></canvas>
     <p>
-    <form id="settings" onsubmit="return false">
+    <div id="settings">
         Size (width and height): <input type="number" value=256 id="texturesize"><br>
         Layers:<br>
         <div id="texturelayers">
@@ -28,7 +28,7 @@
                     el.value = Math.floor(Math.random() * 10000);
                     el.dispatchEvent(new Event('change', { bubbles: true }));
                     " value="Randomize"><br>
-    </form>
+    </div>
     </p>
 </body>
 

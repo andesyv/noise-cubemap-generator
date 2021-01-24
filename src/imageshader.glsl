@@ -1,17 +1,11 @@
 #include <common>
 
 uniform vec3 iResolution;
-uniform float iTime;
 uniform int side;
 uniform int seed;
-uniform int layerCount;
-
-struct Layer
-{
-    float amplitude;
-    float frequency;
-};
-uniform Layer layers[MAX_LAYERS];
+uniform float lacunarity;
+uniform float gain;
+uniform int octaves;
 
 //
 // Description : Array and textureless GLSL 2D/3D/4D simplex
@@ -122,9 +116,10 @@ float snoise(vec3 v)
 
 void main()
 {
-    // Normalized pixel coordinates (from 0 to 1)
+    // Normalized pixel coordinates (from -1 to 1)
     vec2 uv = 2.0 * gl_FragCoord.xy / iResolution.xy - 1.0;
 
+    // Rotate pixel coordinates according to face direction
     vec3 xyz = vec3(1., uv.y, uv.x);
     switch (side)
     {
@@ -148,8 +143,17 @@ void main()
         break;
     }
 
-    gl_FragColor = vec4(vec3(0.), 1.);
+    xyz += float(seed);
 
-    for (int i = 0; i < layerCount; ++i)
-        gl_FragColor.xyz += vec3(snoise((xyz + float(seed)) * layers[i].frequency) * layers[i].amplitude);
+    // Fractal Brownion Motion inspired by https://thebookofshaders.com/13/
+    float fbm = 0.;
+    float amp = .5;
+
+    for (int i = 0; i < octaves; ++i) {
+        fbm += snoise(xyz) * amp;
+        xyz *= lacunarity;
+        amp *= gain;
+    }
+    fbm = .5 + .5 * fbm;
+    gl_FragColor = vec4(vec3(fbm), 1.0);
 }

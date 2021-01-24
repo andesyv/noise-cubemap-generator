@@ -14,6 +14,9 @@ interface ISettings {
   width: number;
   height: number;
   seed: number;
+  octaves: number;
+  lacunarity: number;
+  gain: number;
   layers: ITextureLayer[];
 }
 
@@ -28,10 +31,13 @@ interface IRenderContext {
   texture: Three.CubeTexture;
 }
 
-const settings = {
+const settings: ISettings = {
   width: 256,
   height: 256,
   seed: 1,
+  lacunarity: 2.0,
+  gain: 0.5,
+  octaves: 6,
   layers: [{ frequency: 1.0, amplitude: 0.5 }],
 };
 const context = {} as IRenderContext;
@@ -55,7 +61,7 @@ const main = async () => {
 
   const initLayerList = () => {
     const arr = new Array<ITextureLayer>(MAX_LAYERS);
-    arr.fill({ amplitude: 0.5, frequency: 0.5 });
+    arr.fill({ amplitude: 0.5, frequency: 1.0 });
     Object.seal(arr);
     return arr;
   };
@@ -67,7 +73,9 @@ const main = async () => {
       iResolution: { value: new Three.Vector3() },
       side: { value: 0 },
       seed: { value: 0 },
-      layerCount: { value: 0 },
+      lacunarity: { value: 2.0 },
+      gain: { value: 0.5 },
+      octaves: { value: 0 },
       layers: {
         value: initLayerList(),
       },
@@ -115,6 +123,11 @@ const main = async () => {
   await fetchSettings(settingsObj);
   // Also run add layer button to setup atleast one layer:
   addLayer(settingsObj);
+  addLayer(settingsObj);
+  addLayer(settingsObj);
+  addLayer(settingsObj);
+  addLayer(settingsObj);
+  addLayer(settingsObj);
 
   // Mouse input
   canvas.addEventListener('mousemove', (e) => {
@@ -139,7 +152,7 @@ const updateSettings = async (settings: ISettings) => {
   context.iMaterial.uniforms.iResolution.value.set(settings.width, settings.height, 1);
   context.iMaterial.uniforms.seed.value = settings.seed;
   // Layers:
-  context.iMaterial.uniforms.layerCount.value = settings.layers.length;
+  context.iMaterial.uniforms.octaves.value = settings.layers.length;
   settings.layers.forEach((v, i) => {
     if (i < context.iMaterial.uniforms.layers.value.length)
       context.iMaterial.uniforms.layers.value[i] = v;
@@ -170,6 +183,7 @@ const fetchSettings = async (settingsObj: HTMLFormElement) => {
   settings.seed = imgseed.valueAsNumber;
   const layers = imglayers.getElementsByTagName('div');
   settings.layers = new Array(layers.length);
+  settings;
   for (const item of layers) {
     const layer = getLayer(item);
     if (layer) settings.layers.push(layer);
@@ -184,7 +198,7 @@ const addLayer = (settingsObj: HTMLFormElement) => {
     settings.layers.push({ frequency: 1.0, amplitude: 0.5 });
   } else {
     const last = settings.layers[settings.layers.length - 1];
-    settings.layers.push({ frequency: 2 * last.frequency, amplitude: last.amplitude / 2 });
+    settings.layers.push({ frequency: 2.0 * last.frequency, amplitude: last.amplitude * 0.5 });
   }
 
   const imglayers = settingsObj.querySelector<HTMLUListElement>('#texturelayers');
@@ -198,15 +212,17 @@ const addLayer = (settingsObj: HTMLFormElement) => {
   node.appendChild(document.createTextNode('Amplitude: '));
   const amp = node.appendChild(document.createElement('input'));
   amp.type = 'number';
-  amp.step = 'any';
+  amp.step = '0.01';
   amp.id = 'amplitude';
+  amp.max = '10';
+  amp.min = '0';
   amp.value = layer.amplitude.toString();
 
   // Frequency
   node.appendChild(document.createTextNode('Frequency: '));
   const freq = node.appendChild(document.createElement('input'));
   freq.type = 'number';
-  freq.step = 'any';
+  freq.step = '0.1';
   freq.id = 'frequency';
   freq.value = layer.frequency.toString();
 

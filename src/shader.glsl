@@ -122,6 +122,7 @@ void mainImage(out vec4 fragColor, in vec2 texCoords) {
         vec3 ld = normalize(sp - lpos.xyz);
         vec3 phong = texture(iChannel0, normalize(sp)).xyz;
         fragColor = vec4(phong, 1.);
+        fragColor.xyz = pow(fragColor.xyz, vec3(1. / 2.2));
         return;
     }
 
