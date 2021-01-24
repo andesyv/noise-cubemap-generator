@@ -1,6 +1,4 @@
 <html><head><title>Noise Cube Generator</title><style>#c {
             width: 500;
             height: 500;
-        }</style></head><body><canvas id="c"></canvas><p></p><div id="settings">Size (width and height): <input type="number" value="256" id="texturesize"><br>Lacunarity: <input type="number" id="texturelacunarity" value="2" step="0.1" min="0"><br>Gain: <input type="number" id="texturegain" value="0.5" step="0.1"><br>Octaves: <input type="number" id="textureoctaves" value="6" step="1" min="0"><br>Seed: <input type="number" value="1" id="textureseed"><input type="button" onclick="const el = document.querySelector('#textureseed');
-                    el.value = Math.floor(Math.random() * 10000);
-                    el.dispatchEvent(new Event('change', { bubbles: true }));" value="Randomize"><br></div><p></p><script src="bundle.js"></script></body></html>
+        }</style></head><body><canvas id="c"></canvas><p></p><div id="settings">Size (width and height): <input type="number" value="256" id="texturesize"><br>Lacunarity: <input type="number" id="texturelacunarity" value="2" step="0.1" min="0"><br>Gain: <input type="number" id="texturegain" value="0.5" step="0.1"><br>Octaves: <input type="number" id="textureoctaves" value="6" step="1" min="0"><br>Seed: <input type="number" value="1" id="textureseed"><input type="button" value="Randomize" id="randomize"><br></div><button id="download">Download</button><p></p><script src="bundle.js"></script></body></html>
