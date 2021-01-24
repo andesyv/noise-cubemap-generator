@@ -2,6 +2,8 @@
 import * as Three from 'three';
 import imageShaderCode from './imageshader.glsl';
 import previewShaderCode from './shader.glsl';
+import JSZip from 'jszip';
+import FileSaver from 'file-saver';
 
 interface ISettings {
   width: number;
@@ -20,6 +22,7 @@ interface IRenderContext {
   pMaterial: Three.ShaderMaterial;
   pScene: Three.Scene;
   camera: Three.Camera;
+  renderedImages: string[];
   texture: Three.CubeTexture;
 }
 
@@ -31,7 +34,9 @@ const settings: ISettings = {
   gain: 0.5,
   octaves: 6,
 };
-const context = {} as IRenderContext;
+const context = {
+  renderedImages: new Array<string>(6),
+} as IRenderContext;
 
 // Sleep lambda :)
 // const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -100,6 +105,12 @@ const main = async () => {
     context.pMaterial.uniforms.iMouse.value = getMousePosition(e, canvas);
   });
 
+  const downloadBtn = document.querySelector<HTMLButtonElement>('#download');
+  if (downloadBtn)
+    downloadBtn.addEventListener('click', () => {
+      download();
+    });
+
   requestAnimationFrame(render);
 };
 
@@ -108,7 +119,7 @@ const renderCubeMap = async (): Promise<string[]> => {
   for (let i = 0; i < 6; ++i) {
     context.iMaterial.uniforms.side.value = i;
     context.iRenderer.render(context.iScene, context.camera);
-    sides[i] = context.iRenderer.domElement.toDataURL();
+    context.renderedImages[i] = sides[i] = context.iRenderer.domElement.toDataURL();
   }
   return Promise.resolve(sides);
 };
@@ -193,6 +204,27 @@ const render = (time: number) => {
   context.pRenderer.render(context.pScene, context.camera);
 
   requestAnimationFrame(render);
+};
+
+const fileextensions = ['px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png'];
+
+const download = () => {
+  // New zip object
+  const zip = new JSZip();
+
+  if (!context.renderedImages) return;
+
+  for (let i = 0; i < 6; ++i) {
+    // Data is stored in data uri taken from canvas.toDataURL()
+    const dataUri = context.renderedImages[i];
+    const idx = dataUri.indexOf('base64,') + 'base64,'.length;
+    const content = dataUri.substring(idx);
+    zip.file(fileextensions[i], content, { base64: true });
+  }
+
+  zip.generateAsync({ type: 'blob' }).then((content) => {
+    FileSaver.saveAs(content, 'cubemap.zip');
+  });
 };
 
 main();
