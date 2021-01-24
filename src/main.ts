@@ -3,13 +3,6 @@ import * as Three from 'three';
 import imageShaderCode from './imageshader.glsl';
 import previewShaderCode from './shader.glsl';
 
-const MAX_LAYERS = 16;
-
-interface ITextureLayer {
-  amplitude: number;
-  frequency: number;
-}
-
 interface ISettings {
   width: number;
   height: number;
@@ -17,7 +10,6 @@ interface ISettings {
   octaves: number;
   lacunarity: number;
   gain: number;
-  layers: ITextureLayer[];
 }
 
 interface IRenderContext {
@@ -38,7 +30,6 @@ const settings: ISettings = {
   lacunarity: 2.0,
   gain: 0.5,
   octaves: 6,
-  layers: [{ frequency: 1.0, amplitude: 0.5 }],
 };
 const context = {} as IRenderContext;
 
@@ -59,13 +50,6 @@ const main = async () => {
   context.iRenderer.autoClear = false;
   context.texture = {} as Three.CubeTexture;
 
-  const initLayerList = () => {
-    const arr = new Array<ITextureLayer>(MAX_LAYERS);
-    arr.fill({ amplitude: 0.5, frequency: 1.0 });
-    Object.seal(arr);
-    return arr;
-  };
-
   context.iMaterial = new Three.ShaderMaterial({
     fragmentShader: imageShaderCode,
     uniforms: {
@@ -76,12 +60,6 @@ const main = async () => {
       lacunarity: { value: 2.0 },
       gain: { value: 0.5 },
       octaves: { value: 0 },
-      layers: {
-        value: initLayerList(),
-      },
-    },
-    defines: {
-      MAX_LAYERS: MAX_LAYERS,
     },
   });
 
@@ -114,20 +92,8 @@ const main = async () => {
     if (s) fetchSettings(s);
   });
 
-  const addlayerBtn = document.querySelector<HTMLInputElement>('#addlayer');
-  if (addlayerBtn)
-    addlayerBtn.addEventListener('click', () => {
-      addLayer(settingsObj);
-    });
   // Run the submit button once on init
   await fetchSettings(settingsObj);
-  // Also run add layer button to setup atleast one layer:
-  addLayer(settingsObj);
-  addLayer(settingsObj);
-  addLayer(settingsObj);
-  addLayer(settingsObj);
-  addLayer(settingsObj);
-  addLayer(settingsObj);
 
   // Mouse input
   canvas.addEventListener('mousemove', (e) => {
@@ -151,91 +117,30 @@ const updateSettings = async (settings: ISettings) => {
   context.iRenderer.setSize(settings.width, settings.height);
   context.iMaterial.uniforms.iResolution.value.set(settings.width, settings.height, 1);
   context.iMaterial.uniforms.seed.value = settings.seed;
-  // Layers:
-  context.iMaterial.uniforms.octaves.value = settings.layers.length;
-  settings.layers.forEach((v, i) => {
-    if (i < context.iMaterial.uniforms.layers.value.length)
-      context.iMaterial.uniforms.layers.value[i] = v;
-  });
+  context.iMaterial.uniforms.octaves.value = settings.octaves;
+  context.iMaterial.uniforms.lacunarity.value = settings.lacunarity;
+  context.iMaterial.uniforms.gain.value = settings.gain;
   const cubeMapSides = await renderCubeMap();
   context.texture = await loadTexture(cubeMapSides);
   context.pMaterial.uniforms.iChannel0.value = context.texture;
 };
 
-const getLayer = (listelement: HTMLDivElement): ITextureLayer | null => {
-  const freqElement = listelement.querySelector<HTMLInputElement>('#frequency');
-  const ampElement = listelement.querySelector<HTMLInputElement>('#amplitude');
-  if (freqElement && ampElement)
-    return {
-      frequency: freqElement.valueAsNumber,
-      amplitude: ampElement.valueAsNumber,
-    };
-  return null;
-};
-
 const fetchSettings = async (settingsObj: HTMLFormElement) => {
   const imgsize = settingsObj.querySelector<HTMLInputElement>('#texturesize');
   const imgseed = settingsObj.querySelector<HTMLInputElement>('#textureseed');
-  const imglayers = settingsObj.querySelector<HTMLUListElement>('#texturelayers');
-  if (!imgsize || !imgseed || !imglayers) return;
+  const imglacunarity = settingsObj.querySelector<HTMLInputElement>('#texturelacunarity');
+  const imggain = settingsObj.querySelector<HTMLInputElement>('#texturegain');
+  const imgoctaves = settingsObj.querySelector<HTMLInputElement>('#textureoctaves');
+
+  if (!imgsize || !imgseed || !imglacunarity || !imggain || !imgoctaves) return;
 
   settings.width = settings.height = imgsize.valueAsNumber;
   settings.seed = imgseed.valueAsNumber;
-  const layers = imglayers.getElementsByTagName('div');
-  settings.layers = new Array(layers.length);
-  settings;
-  for (const item of layers) {
-    const layer = getLayer(item);
-    if (layer) settings.layers.push(layer);
-  }
+  settings.lacunarity = imglacunarity.valueAsNumber;
+  settings.gain = imggain.valueAsNumber;
+  settings.octaves = imgoctaves.valueAsNumber;
 
   await updateSettings(settings);
-};
-
-const addLayer = (settingsObj: HTMLFormElement) => {
-  // If there are no elements in list, add 1
-  if (settings.layers.length == 0) {
-    settings.layers.push({ frequency: 1.0, amplitude: 0.5 });
-  } else {
-    const last = settings.layers[settings.layers.length - 1];
-    settings.layers.push({ frequency: 2.0 * last.frequency, amplitude: last.amplitude * 0.5 });
-  }
-
-  const imglayers = settingsObj.querySelector<HTMLUListElement>('#texturelayers');
-  if (!imglayers) return;
-
-  /// Man, JSX for this exact part would've been nice...
-  const layer = settings.layers[settings.layers.length - 1];
-  const node = document.createElement('div');
-
-  // Amplitude
-  node.appendChild(document.createTextNode('Amplitude: '));
-  const amp = node.appendChild(document.createElement('input'));
-  amp.type = 'number';
-  amp.step = '0.01';
-  amp.id = 'amplitude';
-  amp.max = '10';
-  amp.min = '0';
-  amp.value = layer.amplitude.toString();
-
-  // Frequency
-  node.appendChild(document.createTextNode('Frequency: '));
-  const freq = node.appendChild(document.createElement('input'));
-  freq.type = 'number';
-  freq.step = '0.1';
-  freq.id = 'frequency';
-  freq.value = layer.frequency.toString();
-
-  // Removal button
-  const remove = node.appendChild(document.createElement('button'));
-  remove.addEventListener('click', () => {
-    imglayers.removeChild(node);
-    imglayers.dispatchEvent(new Event('change', { bubbles: true })); // Manually dispatch event for other event handlers
-  });
-  remove.appendChild(document.createTextNode('Remove'));
-
-  imglayers.appendChild(node);
-  imglayers.dispatchEvent(new Event('change', { bubbles: true })); // Manually dispatch event for other event handlers
 };
 
 const resizeRendererToDisplaySize = (renderer: Three.WebGLRenderer): boolean => {

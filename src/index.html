@@ -15,14 +15,10 @@
     <p>
     <div id="settings">
         Size (width and height): <input type="number" value=256 id="texturesize"><br>
-        Layers:<br>
-        <div id="texturelayers">
-            <!--
-                <li>
-                    <input type="number" value="0.01" step="any" id="amplitude"/>
-                </li>
-            -->
-        </div><button type="button" id="addlayer">New layer</button><br>
+        Lacunarity: <input type="number" id="texturelacunarity" value="2" step="0.1" min="0"><br>
+        Gain: <input type="number" id="texturegain" value="0.5" step="0.1"><br>
+        Octaves: <input type="number" id="textureoctaves" value="6" step="1" min="0"><br>
+        <button type="button" id="addlayer">New layer</button><br>
         Seed: <input type="number" value=1 id="textureseed"><input type="button" onclick="
                     const el = document.querySelector('#textureseed');
                     el.value = Math.floor(Math.random() * 10000);
