@@ -111,6 +111,12 @@ const main = async () => {
       download();
     });
 
+  const randomizeBtn = document.querySelector<HTMLButtonElement>('#randomize');
+  if (randomizeBtn) {
+    randomizeBtn.addEventListener('click', randomizeSeed);
+    randomizeSeed(); // Randomize once
+  }
+
   requestAnimationFrame(render);
 };
 
@@ -225,6 +231,13 @@ const download = () => {
   zip.generateAsync({ type: 'blob' }).then((content) => {
     FileSaver.saveAs(content, 'cubemap.zip');
   });
+};
+
+const randomizeSeed = () => {
+  const el = document.querySelector<HTMLInputElement>('#textureseed');
+  if (!el) return;
+  el.value = Math.floor(Math.random() * 10000).toString();
+  el.dispatchEvent(new Event('change', { bubbles: true }));
 };
 
 main();
