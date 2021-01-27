@@ -140,6 +140,7 @@ const updateSettings = async (settings: ISettings) => {
   context.iMaterial.uniforms.octaves.value = settings.octaves;
   context.iMaterial.uniforms.lacunarity.value = settings.lacunarity;
   context.iMaterial.uniforms.gain.value = settings.gain;
+  context.iMaterial.uniforms.type.value = settings.type;
   const cubeMapSides = await renderCubeMap();
   context.texture = await loadTexture(cubeMapSides);
   context.pMaterial.uniforms.iChannel0.value = context.texture;
@@ -151,14 +152,16 @@ const fetchSettings = async (settingsObj: HTMLFormElement) => {
   const imglacunarity = settingsObj.querySelector<HTMLInputElement>('#texturelacunarity');
   const imggain = settingsObj.querySelector<HTMLInputElement>('#texturegain');
   const imgoctaves = settingsObj.querySelector<HTMLInputElement>('#textureoctaves');
+  const noisetype = settingsObj.querySelector<HTMLSelectElement>('#texturetype');
 
-  if (!imgsize || !imgseed || !imglacunarity || !imggain || !imgoctaves) return;
+  if (!imgsize || !imgseed || !imglacunarity || !imggain || !imgoctaves || !noisetype) return;
 
   settings.width = settings.height = imgsize.valueAsNumber;
   settings.seed = imgseed.valueAsNumber;
   settings.lacunarity = imglacunarity.valueAsNumber;
   settings.gain = imggain.valueAsNumber;
   settings.octaves = imgoctaves.valueAsNumber;
+  settings.type = parseInt(noisetype.value);
 
   await updateSettings(settings);
 };
