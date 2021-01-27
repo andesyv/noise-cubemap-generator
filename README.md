@@ -4,7 +4,7 @@
 
 [andesyv.github.io/noise-cubemap-generator/](https://andesyv.github.io/noise-cubemap-generator/)
 
-A small tool for generating noise cubemaps using perlin noise. Uses simplex noise by [Stefan Gustavson](https://github.com/stegu/webgl-noise).
+A small tool for generating noise cubemaps using perlin noise. Uses simplex noise by [Stefan Gustavson](https://github.com/stegu/webgl-noise) and value noise by [Morgan McGuire](https://www.shadertoy.com/view/4dS3Wd).
 
 ## Testing environment
 If you want to test out the result yourself or setup a coding environment, do the following:
@@ -33,4 +33,4 @@ The script will run `webpack`, which again will run the typescript compiler and 
 everything into the `build` folder. The final result can be viewed in the `build/index.html` file.
 
 ## Licensing
-See [webgl-noise-LICENCE](https://github.com/andesyv/noise-cubemap-generator/blob/master/webgl-noise-LICENCE) for 3d simplex noise license. The rest of the project is licensed with a normal MIT license seen in [LICENCE](https://github.com/andesyv/noise-cubemap-generator/blob/master/LICENCE).
+See [webgl-noise-LICENCE](https://github.com/andesyv/noise-cubemap-generator/blob/master/webgl-noise-LICENCE) for 3D simplex noise license. The 3D value noise functions is licensed under a BSD License (see [shadertoy.com/view/4dS3Wd](https://www.shadertoy.com/view/4dS3Wd)). The rest of the project is licensed with a normal MIT license seen in [LICENCE](https://github.com/andesyv/noise-cubemap-generator/blob/master/LICENCE).
