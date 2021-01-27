@@ -161,6 +161,28 @@ float vnoise(vec3 x)
 
 
 
+float rand(vec3 p) {
+    return fract(sin(dot(p,
+                         vec3(12.9898,78.233, 34.8731)))*
+        43758.5453123);
+}
+
+float worley3d(vec3 p) {
+    vec3 i_uv = floor(p);
+    vec3 f_uv = fract(p);
+    float dist = 100.0;
+    for (int z = -1; z <= 1; ++z) {
+        for (int y = -1; y <= 1; ++y) {
+            for (int x = -1; x <= 1; ++x) {
+                float r = rand(i_uv + vec3(x, y, z));
+                vec3 point = vec3(r, 1.0 - fract(r), fract(r * 3.));
+                dist = min(dist, length(point - f_uv + vec3(x, y, z)));
+            }
+        }
+    }
+    return dist;
+}
+
 void main()
 {
     // Normalized pixel coordinates (from -1 to 1)
@@ -208,6 +230,10 @@ void main()
         // Simplex (gradient) noise
         case 1:
         fbm += snoise(xyz) * amp;
+            break;
+        // Worley noise
+        case 2:
+        fbm += worley3d(xyz) * amp;
             break;
         }
         xyz *= lacunarity;
