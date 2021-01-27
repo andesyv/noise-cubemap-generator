@@ -12,6 +12,7 @@ interface ISettings {
   octaves: number;
   lacunarity: number;
   gain: number;
+  type: number;
 }
 
 interface IRenderContext {
@@ -33,6 +34,7 @@ const settings: ISettings = {
   lacunarity: 2.0,
   gain: 0.5,
   octaves: 6,
+  type: 0,
 };
 const context = {
   renderedImages: new Array<string>(6),
@@ -65,6 +67,7 @@ const main = async () => {
       lacunarity: { value: 2.0 },
       gain: { value: 0.5 },
       octaves: { value: 0 },
+      type: { value: 0 },
     },
   });
 
